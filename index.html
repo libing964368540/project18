@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title></title>
+		<script src="js/mui.min.js"></script>
+		<link href="css/mui.css" rel="stylesheet" />
+		<script type="text/javascript" charset="utf-8">
+			mui.init();
+			window.onload = window.onresize = function() {
+				document.documentElement.style.fontSize = document.documentElement.clientWidth / 10.04 + 'px';
+			}
+		</script>
+	</head>
+	<style>
+		.flex {
+			display: flex;
+		}
+		
+		body {
+			background: #FFFFFF;
+		}
+		
+		* {
+			padding: 0;
+			margin: 0;
+			list-style: none;
+			text-decoration: none;
+		}
+		
+		#app ul {
+			width: 100%;
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			margin: auto;
+			text-align: center;
+			height: 2rem;
+			justify-content: space-around;
+		}
+		
+		#app ul li {
+			width: 2rem;
+			height: 2rem;
+			border-radius: 50%;
+			text-align: center;
+			line-height: 2rem;
+		}
+		
+		#app ul li.start {
+			background-color: rgba(255, 152, 0, 1);
+			color: rgba(255, 255, 255, 1);
+			font-size: 36px;
+			text-align: center;
+			box-shadow: 5px 5px 15px 5px rgba(255, 152, 0, 0.3);
+			font-family: Roboto;
+		}
+		
+		#app ul li.choose {
+			background-color: rgba(139, 195, 74, 1);
+			color: rgba(255, 255, 255, 1);
+			font-size: 36px;
+			text-align: center;
+			box-shadow: 5px 5px 15px 5px rgba(139, 195, 74, 0.3);
+			font-family: Roboto;
+		}
+		
+		#app ul li.update {
+			background-color: rgba(33, 150, 243, 1);
+			color: rgba(255, 255, 255, 1);
+			font-size: 36px;
+			text-align: center;
+			box-shadow: 5px 5px 15px 5px rgba(33, 150, 243, 0.3);
+			font-family: Roboto;
+		}
+		
+		#app .record {
+			width: 100%;
+			position: absolute;
+			bottom: 0.6rem;
+			text-align: center;
+			font-size: 36px;
+			color: #101010;
+		}
+		
+		.fiexd {
+			background-color: #BBBBBB;
+			box-shadow: 5px 5px 15px 5px #BBBBBB;
+			font-size: 36px;
+			text-align: center;
+			color: rgba(255, 255, 255, 1);
+		}
+	</style>
+
+	<body>
+		<div id="app">
+			<ul class="flex">
+				<li :class="{fiexd:true,start:startFlag}" @tap="chooses">选题</li>
+				<li :class="{fiexd:true, choose:chooseFlag}" @tap="start">开始</li>
+				<li :class="{fiexd:true, update:updateFlag}" @tap="change">创建</li>
+			</ul>
+			<p class="record">20:00:00</p>
+		</div>
+	</body>
+	<script type="text/javascript" src="js/jquery-1.12.4.min.js"></script>
+	<script type="text/javascript" src="js/vue.js"></script>
+	<script type="text/javascript" src="api/req.js"></script>
+	<script type="text/javascript" src="js/CountDown.js"></script>
+	<script type="text/javascript" src="api/index.js"></script>
+	<script type="text/javascript">
+		mui.init();
+        window.timer=null;
+		var app = new Vue({
+			el: '#app',
+			data: {
+				taskid: '',
+				chooseFlag: false,
+				startFlag: false,
+				updateFlag: true
+
+			},
+			mounted: function() {
+				mui.plusReady(function() {
+
+				})
+			},
+			methods: {
+				//获取在线狱警的数量
+				getOline: function() {
+					var that = this;
+					var params = {
+						taskid: this.taskid
+					}
+					getOnline({
+						data: params,
+						success: function(data) {
+							console.log(JSON.stringify(data));
+							if(data.length>=3){
+								that.getProblem();
+							}else{
+								mui.toast('3位考核人员还未全部登录');
+							}
+						},
+						error: function() {
+
+						}
+					})
+
+				},
+				//主持人选题
+				getProblem: function() {
+					var that = this;
+					var params = {
+						taskid:this.taskid
+					};
+					choose1({
+						data: params,
+						success: function(data) {
+						console.log(JSON.stringify(data)+'选题选题');
+							mui.toast('操作成功')
+							that.startFlag = false;
+							that.chooseFlag = true;
+							that.updateFlag = true;
+
+						},
+						error: function() {
+
+						}
+					})
+				},
+				//选题
+				chooses: function() {
+					var that = this;
+					if(!this.startFlag) {
+						return;
+					}
+					mui.confirm('确认操作选题', '提示', ['取消', '确定'], function(e) {
+						if(e.index == 1) {
+//							that.getOline();
+                            that.getProblem();
+						}
+					}, 'div')
+
+				},
+
+				//开始
+				start: function() {
+					if(!this.chooseFlag) {
+						return;
+					}
+					var that = this;
+					mui.confirm('确认开始答题', '提示', ['取消', '确定'], function(e) {
+						if(e.index == 1) {
+							var params = {
+								taskid: that.taskid
+							}
+							start({
+								data: params,
+								success: function(data) {
+									var obj = data[0];
+									var _TaskEnd = obj._TaskEnd.slice(6, -2)
+//									var _TaskBegin = obj._TaskBegin.slice(6, -2);
+//									var NowTime = new Date().getTime();
+//									     sys_second = NowTime - _TaskBegin;
+//                                      _TaskBegin = sys_second < 0 ? _TaskBegin : NowTime;
+//									var time = _TaskEnd - _TaskBegin;
+//									console.log(parseInt(_TaskEnd))
+									mui.toast('操作成功');
+									that.startFlag = false;
+									that.chooseFlag = false;
+									that.updateFlag = true;
+									countDown(_TaskEnd, $('.record'), function() {
+										that.updateFlag = true;
+									})
+								},
+								error: function() {
+
+								}
+							})
+						}
+					})
+				},
+				//更换
+				change: function() {
+					var that = this;
+					if(!this.updateFlag) {
+						return;
+					}
+					mui.confirm('确认更换操作', '提示', ['取消', '确定'], function(e) {
+						if(e.index == 1) {
+							var params = {};
+							change({
+								data: params,
+								success: function(data) {
+									var obj = data[0];
+									if(timer){
+										 clearInterval(timer);
+									}
+                                     $('.record').text('20:00:00')
+                                    
+									mui.toast('操作成功')
+									that.taskid = obj.TaskId;
+									that.startFlag = true;
+									that.chooseFlag = false;
+									that.updateFlag = false;
+
+								},
+								error: function() {
+
+								}
+							})
+						}
+					}, 'div')
+				},
+				//倒计时结束后关闭任务
+				close:function(){
+					var params={
+						taskid: this.taskid
+					}
+					end({
+						data:params,
+						success:function(data){
+						   mui.toast('此轮比赛结束')	
+						},
+						error:function(){
+							
+						}
+					})
+				}
+			}
+		})
+	</script>
+
+</html>
